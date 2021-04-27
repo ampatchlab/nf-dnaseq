@@ -1,0 +1,49 @@
+title: "ampatchlab/nf-dnaseq"
+subtitle: "DNA variant calling and annotation Nextflow pipeline"
+intro_text: False
+
+report_header_info:
+    - Contact E-mail: 'stephen.kazakoff@qimrberghofer.edu.au'
+    - Application Type: 'DNA variant calling and annotation Nextflow pipeline'
+
+module_order:
+    - fastqc:
+        name: 'FastQC (raw)'
+        anchor: 'fastqc-raw'
+        target: 'FastQC'
+        path_filters_exclude:
+            - '*.trimmed_fastqc.zip'
+    - cutadapt
+    - fastqc:
+        name: 'FastQC (trimmed)'
+        anchor: 'fastqc-trimmed'
+        target: 'FastQC'
+        path_filters:
+            - '*.trimmed_fastqc.zip'
+    - picard
+    - samtools
+    - mosdepth
+    - qualimap
+
+extra_fn_clean_exts:
+    - type: 'truncate'
+      pattern: '.markdup'
+      module:
+        - mosdepth
+        - qualimap
+        - Samtools
+
+run_modules:
+    - fastqc
+    - cutadapt
+    - picard
+    - samtools
+    - mosdepth
+    - qualimap
+
+exclude_modules:
+    - custom_content
+
+table_columns_visible:
+    Samtools:
+        mapped_passed: False
