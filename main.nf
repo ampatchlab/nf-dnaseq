@@ -43,6 +43,8 @@ include { parse_readgroup_csv } from './functions/input_csv_parsers.nf' params( 
 include { parse_somatic_csv } from './functions/input_csv_parsers.nf' params( params )
 include { parse_germline_csv } from './functions/input_csv_parsers.nf' params( params )
 
+include { get_header } from './functions/input_csv_parsers.nf' params( params )
+
 // modules
 include { bwa_index } from './modules/bwakit.nf' params( params )
 include { gunzip as gunzip_fasta } from './modules/gzip.nf' params( params )
@@ -59,8 +61,12 @@ include { extract as unpack_vep_cache } from './modules/tar.nf' params( params )
 
 // workflows
 include { dna_alignment } from './workflows/alignment.nf' params( params )
+
 include { germline_variant_calling } from './workflows/variant_calling.nf' params( params )
 include { somatic_variant_calling } from './workflows/variant_calling.nf' params( params )
+
+include { mpileup as germline_mpileup } from './workflows/mpileup.nf' params( params )
+include { mpileup as somatic_mpileup } from './workflows/mpileup.nf' params( params )
 
 include { ensembl_vep as germline_annotation } from './workflows/annotation.nf' params( params )
 include { ensembl_vep as somatic_annotation } from './workflows/annotation.nf' params( params )
@@ -109,6 +115,10 @@ params.vep_synonyms = "${baseDir}/assets/null"
 workflow {
 
     readgroup_inputs = parse_readgroup_csv( params.readgroup_csv )
+
+    List<String> header = get_header( params.readgroup_csv )
+    Boolean paired_end = header.contains( 'fastq1' ) && header.contains( 'fastq2' )
+    Boolean single_end = header.contains( 'fastq' )
 
     cutadapt_adapter_files = [ params.r1_adapter_file, params.r2_adapter_file ]
 
@@ -181,8 +191,14 @@ workflow {
             params.strelka_call_regions,
         )
 
-        germline_annotation(
+        germline_mpileup(
+            germline_inputs,
             germline_variant_calling.out,
+            indexed_ref_fasta,
+        )
+
+        germline_annotation(
+            germline_mpileup.out,
             indexed_ref_fasta,
             vep_cache,
             params.vep_synonyms,
@@ -225,10 +241,17 @@ workflow {
             indexed_ref_fasta,
             params.manta_call_regions,
             params.strelka_call_regions,
+            single_end,
+        )
+
+        somatic_mpileup(
+            somatic_inputs,
+            somatic_variant_calling.out,
+            indexed_ref_fasta,
         )
 
         somatic_annotation(
-            somatic_variant_calling.out,
+            somatic_mpileup.out,
             indexed_ref_fasta,
             vep_cache,
             params.vep_synonyms,

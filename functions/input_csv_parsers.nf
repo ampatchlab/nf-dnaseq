@@ -69,6 +69,14 @@ class DictReader implements Iterable<Map<String, String>> {
 }
 
 
+def get_header( csv ) {
+
+    DictReader reader = new DictReader( csv )
+
+    return reader.getHeader()
+}
+
+
 def parse_readgroup_csv( csv ) {
 
     DictReader reader = new DictReader( csv )
