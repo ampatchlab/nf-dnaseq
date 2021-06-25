@@ -283,14 +283,22 @@ workflow {
 
 
     // STEP 8 - Create a MultiQC report
-    logs = Channel.empty() \
-        | mix( dna_alignment.out.logs ) \
-        | mix( mosdepth.out.dists ) \
-        | mix( mosdepth.out.summary ) \
-        | mix( qualimap.out ) \
-        | collect
+    germline_logs = params.germline_csv
+        ? germline_annotation.out.vep_stats
+        : Channel.empty()
 
-    multiqc( logs, params.multiqc_config )
+    somatic_logs = params.somatic_csv
+        ? somatic_annotation.out.vep_stats
+        : Channel.empty()
+
+    multiqc(
+        dna_alignment.out.logs.collect(),
+        mosdepth.out.dists.collect(),
+        qualimap.out.collect(),
+        germline_logs.collect(),
+        somatic_logs.collect(),
+        params.multiqc_config,
+    )
 }
 
 

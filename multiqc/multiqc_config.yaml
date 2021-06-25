@@ -12,18 +12,30 @@ module_order:
         anchor: 'fastqc-raw'
         target: 'FastQC'
         path_filters_exclude:
-            - '*.trimmed_fastqc.zip'
+            - './logs/alignment/*.trimmed_fastqc.zip'
     - cutadapt
     - fastqc:
         name: 'FastQC (trimmed)'
         anchor: 'fastqc-trimmed'
         target: 'FastQC'
         path_filters:
-            - '*.trimmed_fastqc.zip'
+            - './logs/alignment/*.trimmed_fastqc.zip'
     - picard
     - samtools
     - mosdepth
     - qualimap
+    - vep:
+        name: 'VEP (germline)'
+        anchor: 'vep-germline'
+        target: 'VEP'
+        path_filters:
+            - './logs/vep/germline/*.stats.html'
+    - vep:
+        name: 'VEP (somatic)'
+        anchor: 'vep-somatic'
+        target: 'VEP'
+        path_filters:
+            - './logs/vep/somatic/*.stats.html'
 
 extra_fn_clean_exts:
     - type: 'truncate'
@@ -40,6 +52,7 @@ run_modules:
     - samtools
     - mosdepth
     - qualimap
+    - vep
 
 exclude_modules:
     - custom_content
