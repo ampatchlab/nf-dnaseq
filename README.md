@@ -47,7 +47,7 @@ Workflow input params:
 Reference genome params:
 
     --genome STR
-        Genome name [Either: GRCh38, GRCm38; Default: GRCh38]
+        Genome name [Either: GRCh38, GRCm39; Default: GRCh38]
 
     --ref_fasta FILE
         Override the reference FASTA file with FILE [Default: null]
