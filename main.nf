@@ -57,7 +57,7 @@ include { qualimap } from './modules/qualimap.nf' params( params )
 include { bcftools_subset_regions as subset_germline_variants } from './modules/bcftools.nf' params( params )
 include { bcftools_subset_regions as subset_somatic_variants } from './modules/bcftools.nf' params( params )
 
-include { extract as unpack_vep_cache } from './modules/tar.nf' params( params )
+include { unpack_vep_cache } from './modules/vep.nf' params( params )
 
 // workflows
 include { dna_alignment } from './workflows/alignment.nf' params( params )
@@ -159,13 +159,15 @@ workflow {
 
 
     // STEP 5 - Extract the indexed Ensembl VEP cache files
-    vep_cache = ( params.germline_csv || params.somatic_csv )
-        ? unpack_vep_cache( params.vep_cache )
-        : Channel.empty()
+    if( params.germline_csv || params.somatic_csv ) {
 
-    vep_species = ( params.germline_csv || params.somatic_csv )
-        ? vep_cache.map { it.baseName }
-        : Channel.empty()
+        vep_cache = unpack_vep_cache( params.vep_cache )
+        cache_info = vep_cache.cache_info.map {
+            it.readLines().collectEntries() { it.split('\t') }
+        }
+        vep_species = cache_info.map { it['species'] }
+        vep_assembly = cache_info.map { it['assembly'] }
+    }
 
 
     // STEP 6 - Call and annotate germline variants
@@ -200,9 +202,10 @@ workflow {
         germline_annotation(
             germline_mpileup.out,
             indexed_ref_fasta,
-            vep_cache,
+            vep_cache.cache_dir,
             params.vep_synonyms,
             vep_species,
+            vep_assembly,
         )
     }
 
@@ -253,9 +256,10 @@ workflow {
         somatic_annotation(
             somatic_mpileup.out,
             indexed_ref_fasta,
-            vep_cache,
+            vep_cache.cache_dir,
             params.vep_synonyms,
             vep_species,
+            vep_assembly,
         )
     }
 
