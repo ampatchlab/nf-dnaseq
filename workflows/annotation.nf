@@ -54,14 +54,14 @@ workflow ensembl_vep {
 
 
     // STEP 2 - Convert the VEP VCF files to tab-separated values
-    vep.out.annotated_variants \
+    vep.out.indexed_vcf \
         | map { vcf, tbi -> tuple( vcf.getBaseName(2), tuple( vcf, tbi ) ) } \
         | vepvcf2tsv
 
 
     emit:
 
-    vep_vcf = vep.out.annotated_variants
+    vep_vcf = vep.out.indexed_vcf
 
     all_variants_tsv = vepvcf2tsv.out.all_variants
     pass_variants_tsv = vepvcf2tsv.out.pass_variants

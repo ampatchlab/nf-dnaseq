@@ -47,9 +47,11 @@ include { get_header } from './functions/input_csv_parsers.nf' params( params )
 
 // modules
 include { bwa_index } from './modules/bwakit.nf' params( params )
-include { gunzip as gunzip_fasta } from './modules/gzip.nf' params( params )
 include { multiqc } from './modules/multiqc.nf' params( params )
 include { samtools_faidx } from './modules/samtools.nf' params( params )
+
+include { gunzip as gunzip_fasta } from './modules/gzip.nf' params( params )
+include { gunzip as gunzip_somatic_vcf } from './modules/gzip.nf' params( params )
 
 include { mosdepth } from './modules/mosdepth.nf' params( params )
 include { qualimap } from './modules/qualimap.nf' params( params )
@@ -58,6 +60,7 @@ include { bcftools_subset_regions as subset_germline_variants } from './modules/
 include { bcftools_subset_regions as subset_somatic_variants } from './modules/bcftools.nf' params( params )
 
 include { unpack_vep_cache } from './modules/vep.nf' params( params )
+include { vcf2maf } from './modules/vcf2maf.nf' params( params )
 
 // workflows
 include { dna_alignment } from './workflows/alignment.nf' params( params )
@@ -258,6 +261,21 @@ workflow {
             indexed_ref_fasta,
             vep_cache.cache_dir,
             params.vep_synonyms,
+            vep_species,
+            vep_assembly,
+        )
+
+        somatic_annotation.out.vep_vcf \
+            | map { vcf, tbi -> vcf } \
+            | gunzip_somatic_vcf \
+            | map { vcf -> tuple( vcf.getSimpleName(), vcf ) } \
+            | join( test_control_inputs ) \
+            | map { analysis, vcf, test, control -> tuple( vcf, test, control ) } \
+            | set { vcf2maf_inputs }
+
+        vcf2maf(
+            vcf2maf_inputs,
+            indexed_ref_fasta,
             vep_species,
             vep_assembly,
         )
